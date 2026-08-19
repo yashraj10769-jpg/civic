@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-gov-navy: #1B3A6B;
+  --color-gov-navy-dark: #122952;
+  --color-gov-navy-light: #2A5298;
+  --color-gov-blue: #1565C0;
+  --color-saffron: #FF9933;
+  --color-saffron-light: #FFB347;
+  --color-india-green: #138808;
+  --color-india-green-light: #1EA810;
+  --color-gov-bg: #F4F6FA;
+  --color-gov-card: #FFFFFF;
+  --color-gov-border: #CBD5E1;
+  --color-gov-muted: #64748B;
+  --color-gov-text: #0F172A;
+  --color-status-submitted: #3B82F6;
+  --color-status-progress: #F59E0B;
+  --color-status-resolved: #10B981;
+  --color-status-rejected: #EF4444;
+  --color-status-assigned: #8B5CF6;
+
+  --font-sans: 'Noto Sans', system-ui, sans-serif;
+  --font-serif: 'Noto Serif', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-devanagari: 'Noto Sans Devanagari', 'Noto Sans', sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-gov-bg);
+  color: var(--color-gov-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #1B3A6B;
+  outline-offset: 2px;
+}
+
+/* Govt seal placeholder */
+.govt-seal {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
+  border: 2px solid #1B3A6B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1B3A6B;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+/* Page transitions */
+.page-enter {
+  animation: pageIn 0.2s ease-out;
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* AI analysis pulse */
+@keyframes aiPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.ai-pulse { animation: aiPulse 1.5s ease-in-out infinite; }
+
+/* Points earned animation */
+@keyframes pointsBounce {
+  0% { transform: scale(0.8) translateY(0); opacity: 0; }
+  60% { transform: scale(1.1) translateY(-8px); opacity: 1; }
+  100% { transform: scale(1) translateY(-4px); opacity: 1; }
+}
+
+.points-anim { animation: pointsBounce 0.4s ease-out forwards; }
