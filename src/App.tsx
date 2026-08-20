@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import QuickTools from "./components/QuickTools";
+import CookieBanner from "./components/CookieBanner";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
@@ -38,6 +40,9 @@ export default function App() {
   const [lang, setLang] = useState<"en" | "hi" | "mr">("en");
   const [fontSize, setFontSize] = useState(16);
   const [highContrast, setHighContrast] = useState(false);
+  const [textSpacing, setTextSpacing] = useState(false);
+  const [lineHeight, setLineHeight] = useState(false);
+  const [hideImages, setHideImages] = useState(false);
   const [lastComplaintId, setLastComplaintId] = useState("");
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -67,9 +72,15 @@ export default function App() {
 
   return (
     <div
+      id="main-content"
       style={{ fontSize: `${fontSize}px` }}
-      className={`min-h-screen flex flex-col ${highContrast ? "contrast-125 brightness-110" : ""}`}
+      className={`min-h-screen flex flex-col ${
+        highContrast ? "high-contrast-mode" : ""
+      } ${textSpacing ? "extra-text-spacing" : ""} ${
+        lineHeight ? "extra-line-height" : ""
+      } ${hideImages ? "hide-images" : ""}`}
     >
+      {/* India.gov.in Header & Accessibility Bar */}
       <Header
         currentPage={page}
         onNavigate={navigate}
@@ -83,8 +94,18 @@ export default function App() {
         onFontSize={handleFontSize}
         highContrast={highContrast}
         onToggleContrast={() => setHighContrast((h) => !h)}
+        textSpacing={textSpacing}
+        onToggleTextSpacing={() => setTextSpacing((t) => !t)}
+        lineHeight={lineHeight}
+        onToggleLineHeight={() => setLineHeight((l) => !l)}
+        hideImages={hideImages}
+        onToggleHideImages={() => setHideImages((m) => !m)}
       />
 
+      {/* Floating Quick Action Side Utilities */}
+      <QuickTools onNavigate={navigate} />
+
+      {/* Main Pages */}
       <main className={`flex-1 ${addMobilePadding ? "pb-20 xl:pb-0" : ""}`}>
         {page === "home" && <LandingPage onNavigate={navigate} lang={lang} />}
         {page === "login" && <LoginPage onNavigate={navigate} onLogin={handleLogin} />}
@@ -106,7 +127,10 @@ export default function App() {
             <div className="text-4xl mb-4">🔒</div>
             <h2 className="text-xl font-bold font-serif text-[#0F172A] mb-2">Login Required</h2>
             <p className="text-[#64748B] mb-5">Please login to access your citizen dashboard.</p>
-            <button onClick={() => navigate("login")} className="bg-[#1B3A6B] text-white font-semibold px-6 py-3 rounded hover:bg-[#122952] transition-colors">
+            <button
+              onClick={() => navigate("login")}
+              className="bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+            >
               Login Now
             </button>
           </div>
@@ -117,7 +141,10 @@ export default function App() {
             <div className="text-4xl mb-4">🚫</div>
             <h2 className="text-xl font-bold font-serif text-[#0F172A] mb-2">Access Denied</h2>
             <p className="text-[#64748B] mb-5">Admin access is restricted to authorized government personnel.</p>
-            <button onClick={() => navigate("admin-login")} className="bg-[#1B3A6B] text-white font-semibold px-6 py-3 rounded hover:bg-[#122952] transition-colors">
+            <button
+              onClick={() => navigate("admin-login")}
+              className="bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+            >
               Admin Login
             </button>
           </div>
@@ -127,7 +154,11 @@ export default function App() {
         {page === "certificates" && <CertificatesPage />}
       </main>
 
+      {/* Official Footer */}
       {showFooter && <Footer onNavigate={navigate} />}
+
+      {/* Cookie Consent Banner (Matches India.gov.in) */}
+      <CookieBanner />
     </div>
   );
 }

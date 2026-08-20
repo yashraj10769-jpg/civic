@@ -1,311 +1,617 @@
-type Page = string;
+import { useState } from "react";
+import Emblem from "../components/Emblem";
+import IdealGallery from "../components/IdealGallery";
 
 interface LandingPageProps {
-  onNavigate: (page: Page) => void;
+  onNavigate: (page: string) => void;
   lang: "en" | "hi" | "mr";
 }
 
-const stats = [
-  { value: "24,860", label: "Issues Reported", sublabel: "Total complaints filed" },
-  { value: "18,430", label: "Issues Resolved", sublabel: "Successfully resolved" },
-  { value: "4,120", label: "Active Issues", sublabel: "Currently in progress" },
-  { value: "12,650", label: "Active Citizens", sublabel: "Participating citizens" },
-  { value: "3.8 Days", label: "Avg. Resolution", sublabel: "Average time to resolve" },
+// In-app only feature tags (No external Aadhaar/Passport)
+const inAppFeatureTags = [
+  { label: "📝 Report Civic Issue", page: "report" },
+  { label: "🔍 Track Complaint", page: "track" },
+  { label: "🗺️ Ward GIS Map", page: "map" },
+  { label: "👥 Community Feed", page: "community" },
+  { label: "⭐ Swachh Badges & Leaderboard", page: "gamification" },
+  { label: "📜 Citizen Certificates", page: "certificates" },
+  { label: "🚰 Water & Drainage Issue", page: "report" },
+  { label: "⚡ Streetlight & Electricity", page: "report" },
+  { label: "🏛️ Admin Department Portal", page: "admin-login" },
 ];
 
-const howItWorks = [
+const categoryOptions = [
+  { value: "all", label: "All Civic Categories" },
+  { value: "roads", label: "Roads & Potholes" },
+  { value: "water", label: "Water Supply & Leakages" },
+  { value: "sanitation", label: "Swachh Bharat & Sanitation" },
+  { value: "electricity", label: "Streetlights & Electricity" },
+  { value: "certificates", label: "Citizen Certificates & Records" },
+  { value: "community", label: "Ward Community Discussions" },
+];
+
+const serviceCategories = [
   {
-    step: "01",
-    title: "Report",
-    desc: "Citizen reports a civic issue using text, image, location or voice in their preferred language.",
-    icon: "📋",
-    color: "#1B3A6B",
+    id: "sanitation",
+    icon: "🧹",
+    title: "Swachh Bharat & Waste Management",
+    titleHi: "स्वच्छ भारत एवं कचरा प्रबंधन",
+    desc: "Garbage clearing, bio-waste collection, open dumping complaints, public urinal hygiene",
+    count: "4,820 resolved",
+    action: "report",
+    color: "from-emerald-500/15 to-green-500/10 border-emerald-300",
   },
   {
-    step: "02",
-    title: "Verify",
-    desc: "AI checks the complaint and identifies duplicate or similar reports from other citizens.",
-    icon: "🤖",
-    color: "#2A5298",
+    id: "roads",
+    icon: "🛣️",
+    title: "Roads & Potholes Fast-Track",
+    titleHi: "सड़क एवं गड्ढा मरम्मत",
+    desc: "Pothole repairs, road resurfacing, broken manhole covers, speed breaker requests",
+    count: "4,120 resolved",
+    action: "report",
+    color: "from-amber-500/15 to-emerald-500/10 border-emerald-300",
   },
   {
-    step: "03",
-    title: "Resolve",
-    desc: "The responsible government department receives and processes the issue with full accountability.",
-    icon: "🏛️",
-    color: "#FF9933",
+    id: "water",
+    icon: "🚰",
+    title: "Water Supply & Drainage",
+    titleHi: "जल आपूर्ति एवं जल निकासी",
+    desc: "Water pipeline bursts, contaminated supply, drain blockage, water tanker deployment",
+    count: "3,140 resolved",
+    action: "report",
+    color: "from-cyan-500/15 to-emerald-500/10 border-emerald-300",
   },
   {
-    step: "04",
-    title: "Track",
-    desc: "Citizen tracks the complaint status in real time until complete resolution is confirmed.",
-    icon: "📍",
-    color: "#138808",
+    id: "electricity",
+    icon: "⚡",
+    title: "Solar Streetlights & Electricity",
+    titleHi: "सौर स्ट्रीटलाइट एवं विद्युत",
+    desc: "Non-functional streetlights, sparking transformers, hanging wires, power cuts",
+    count: "2,290 resolved",
+    action: "report",
+    color: "from-yellow-500/15 to-emerald-500/10 border-emerald-300",
+  },
+  {
+    id: "certificates",
+    icon: "📜",
+    title: "E-Certificates & Permits",
+    titleHi: "ई-प्रमाण पत्र एवं अनुमति",
+    desc: "Download verified Birth/Death, Domicile, Caste certificates, and Municipal trade licenses",
+    count: "18+ e-Services",
+    action: "certificates",
+    color: "from-teal-500/15 to-emerald-500/10 border-emerald-300",
+  },
+  {
+    id: "gamification",
+    icon: "⭐",
+    title: "Swachh Citizen Leaderboard",
+    titleHi: "स्वच्छ नागरिक अंक एवं पुरस्कार",
+    desc: "Earn civic reward points, unlock Swachh Champion badges, and participate in ward drives",
+    count: "12,650+ Citizens",
+    action: "gamification",
+    color: "from-emerald-500/20 to-lime-500/10 border-emerald-300",
   },
 ];
 
-const recentIssues = [
-  { id: "CIV-2026-00274", title: "Traffic signal malfunction at Harmu Crossing", ward: "Ward 14", citizens: 42, status: "In Progress", category: "Traffic" },
-  { id: "CIV-2026-00344", title: "Water pipe burst near Shantinagar Colony", ward: "Ward 5", citizens: 31, status: "Under Verification", category: "Water Leakage" },
-  { id: "CIV-2026-00421", title: "Large pothole near Govt. School entrance", ward: "Ward 12", citizens: 23, status: "In Progress", category: "Road Damage" },
-  { id: "CIV-2026-00251", title: "Power outage in Kokar Colony Block B", ward: "Ward 21", citizens: 67, status: "Resolved", category: "Electricity" },
+const trendingIssues = [
+  {
+    id: "CIV-2026-00421",
+    title: "Deep crater-sized pothole outside Govt. Higher Secondary School",
+    ward: "Ward 12 (Harmu)",
+    citizens: 84,
+    status: "In Progress",
+    dept: "PWD Roads",
+    sla: "Target: Today 6 PM",
+    category: "Road Damage",
+  },
+  {
+    id: "CIV-2026-00389",
+    title: "Main water supply pipe rupture flooding Ashok Nagar Main Road",
+    ward: "Ward 05 (Ashok Nagar)",
+    citizens: 62,
+    status: "Assigned",
+    dept: "Jal Sansthan",
+    sla: "Target: 4 hrs",
+    category: "Water Supply",
+  },
+  {
+    id: "CIV-2026-00312",
+    title: "15 consecutive LED solar streetlights non-operational along Bypass",
+    ward: "Ward 19 (Bariatu)",
+    citizens: 49,
+    status: "Under Verification",
+    dept: "Municipal Lighting",
+    sla: "Target: 24 hrs",
+    category: "Electricity",
+  },
+  {
+    id: "CIV-2026-00251",
+    title: "Hazardous electric wire hanging low near residential market complex",
+    ward: "Ward 21 (Kokar)",
+    citizens: 112,
+    status: "Resolved",
+    dept: "Electricity Board",
+    sla: "Resolved in 3.1 hrs",
+    category: "Electricity",
+  },
 ];
 
-const statusColors: Record<string, string> = {
-  "In Progress": "text-orange-600 bg-orange-50",
-  "Under Verification": "text-yellow-600 bg-yellow-50",
-  "Resolved": "text-emerald-600 bg-emerald-50",
-  "Assigned": "text-purple-600 bg-purple-50",
-  "Submitted": "text-blue-600 bg-blue-50",
+const statusStyles: Record<string, string> = {
+  "In Progress": "bg-amber-100 text-amber-800 border-amber-300",
+  "Assigned": "bg-purple-100 text-purple-800 border-purple-300",
+  "Under Verification": "bg-blue-100 text-blue-800 border-blue-300",
+  "Resolved": "bg-emerald-100 text-emerald-800 border-emerald-300",
 };
 
 export default function LandingPage({ onNavigate, lang }: LandingPageProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const isHi = lang === "hi";
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      onNavigate("report");
+      return;
+    }
+    const q = searchQuery.toLowerCase();
+    if (q.includes("track") || q.includes("status") || q.includes("civ-")) {
+      onNavigate("track");
+    } else if (q.includes("map") || q.includes("gis") || q.includes("ward")) {
+      onNavigate("map");
+    } else if (q.includes("cert") || q.includes("licence") || q.includes("doc")) {
+      onNavigate("certificates");
+    } else if (q.includes("badge") || q.includes("reward") || q.includes("point") || q.includes("lead")) {
+      onNavigate("gamification");
+    } else if (q.includes("feed") || q.includes("vote") || q.includes("communit")) {
+      onNavigate("community");
+    } else if (q.includes("admin")) {
+      onNavigate("admin-login");
+    } else {
+      onNavigate("report");
+    }
+  };
+
   return (
-    <div className="page-enter">
-      {/* Hero */}
-      <section className="bg-white border-b border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto px-4 py-14 lg:py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-[#EFF6FF] text-[#1B3A6B] text-xs font-semibold px-3 py-1.5 rounded mb-6 border border-[#BFDBFE]">
-                <span className="w-1.5 h-1.5 bg-[#138808] rounded-full animate-pulse" />
-                Government of Jharkhand — Official Civic Platform
-              </div>
-              <h1 className="text-4xl lg:text-5xl font-bold font-serif text-[#0F172A] leading-tight mb-5">
-                {isHi ? "आपकी आवाज़। आपका समुदाय।" : "Your Voice."}
-                <span className="text-[#1B3A6B] block">{isHi ? "आपकी सरकार।" : "Your Community. Your Government."}</span>
-              </h1>
-              <p className="text-lg text-[#475569] leading-relaxed mb-8">
-                {isHi
-                  ? "अपने क्षेत्र की नागरिक समस्याओं की रिपोर्ट करें और अधिकारियों को सुरक्षित, स्वच्छ और बेहतर समुदाय बनाने में मदद करें।"
-                  : "Report civic issues in your area and help authorities build safer, cleaner and better communities."}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 mb-8">
-                <button
-                  onClick={() => onNavigate("report")}
-                  className="bg-[#1B3A6B] hover:bg-[#122952] text-white font-semibold px-6 py-3 rounded transition-colors text-base"
-                >
-                  {isHi ? "नागरिक समस्या दर्ज करें" : "Report a Civic Issue"}
-                </button>
-                <button
-                  onClick={() => onNavigate("track")}
-                  className="bg-white hover:bg-[#F8FAFC] text-[#1B3A6B] font-semibold px-6 py-3 rounded border-2 border-[#1B3A6B] transition-colors text-base"
-                >
-                  {isHi ? "शिकायत ट्रैक करें" : "Track My Complaint"}
-                </button>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-[#64748B]">
-                <span className="w-2 h-2 bg-[#FF9933] rounded-full" />
-                <span>Transparent</span>
-                <span className="w-2 h-2 bg-[#1B3A6B] rounded-full ml-2" />
-                <span>Accountable</span>
-                <span className="w-2 h-2 bg-[#138808] rounded-full ml-2" />
-                <span>Community Powered</span>
-              </div>
-            </div>
+    <div className="page-enter bg-[#F0FDF4]/30">
+      {/* 1. SWACHH BHARAT (GANDHI THEMED) GREEN HERO SECTION */}
+      <section
+        className="relative bg-cover bg-center min-h-[600px] sm:min-h-[660px] flex items-center justify-center text-white px-4 py-16 sm:py-24"
+        style={{
+          backgroundImage: `url('/images/swachh_bharat_bg.jpg')`,
+        }}
+      >
+        {/* Dark Emerald & Vignette Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/85 via-emerald-950/60 to-emerald-950/90 backdrop-blur-[0.5px]" />
 
-            {/* Civic Illustration */}
-            <div className="hidden lg:block">
-              <div className="bg-[#F4F6FA] rounded-xl border border-[#E2E8F0] p-6 relative overflow-hidden">
-                {/* Map-like illustration */}
-                <svg viewBox="0 0 480 320" className="w-full h-64" aria-hidden="true">
-                  {/* Roads */}
-                  <rect x="0" y="140" width="480" height="14" fill="#CBD5E1" opacity="0.6" />
-                  <rect x="220" y="0" width="14" height="320" fill="#CBD5E1" opacity="0.6" />
-                  <rect x="0" y="240" width="480" height="10" fill="#CBD5E1" opacity="0.4" />
-                  <rect x="120" y="0" width="10" height="320" fill="#CBD5E1" opacity="0.4" />
-                  <rect x="340" y="0" width="10" height="320" fill="#CBD5E1" opacity="0.4" />
-
-                  {/* Houses/buildings */}
-                  {[
-                    [30, 40], [80, 30], [50, 80], [160, 40], [170, 80],
-                    [270, 30], [310, 50], [280, 90], [360, 40], [400, 60],
-                    [30, 170], [70, 180], [30, 260], [90, 270],
-                    [270, 170], [320, 180], [360, 160], [400, 180],
-                    [270, 260], [320, 270], [400, 260],
-                  ].map(([x, y], i) => (
-                    <rect key={i} x={x} y={y} width="28" height="22" rx="2" fill="#E2E8F0" stroke="#CBD5E1" strokeWidth="1" />
-                  ))}
-
-                  {/* Issue markers */}
-                  <g>
-                    {/* Red - critical */}
-                    <circle cx="147" cy="135" r="10" fill="#EF4444" opacity="0.9" />
-                    <text x="147" y="139" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">!</text>
-
-                    {/* Orange - high */}
-                    <circle cx="290" cy="240" r="9" fill="#F59E0B" opacity="0.9" />
-                    <text x="290" y="244" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">!</text>
-
-                    {/* Green - resolved */}
-                    <circle cx="380" cy="140" r="8" fill="#10B981" opacity="0.9" />
-                    <text x="380" y="144" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">✓</text>
-
-                    {/* Blue - submitted */}
-                    <circle cx="60" cy="240" r="8" fill="#3B82F6" opacity="0.9" />
-                    <text x="60" y="244" textAnchor="middle" fill="white" fontSize="9">●</text>
-
-                    {/* Orange medium */}
-                    <circle cx="340" cy="90" r="7" fill="#FF9933" opacity="0.9" />
-                    <text x="340" y="94" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">!</text>
-                  </g>
-
-                  {/* Government building */}
-                  <rect x="206" y="40" width="52" height="80" rx="2" fill="#1B3A6B" />
-                  <rect x="214" y="30" width="36" height="12" rx="1" fill="#1B3A6B" />
-                  {[214, 226, 238].map((x, i) => (
-                    <rect key={i} x={x} y="60" width="8" height="40" rx="1" fill="white" opacity="0.3" />
-                  ))}
-                  <text x="232" y="100" textAnchor="middle" fill="white" fontSize="14">🏛</text>
-
-                  {/* Legend */}
-                  <g transform="translate(10, 285)">
-                    {[
-                      { color: "#EF4444", label: "Critical" },
-                      { color: "#F59E0B", label: "High" },
-                      { color: "#10B981", label: "Resolved" },
-                      { color: "#3B82F6", label: "Submitted" },
-                    ].map(({ color, label }, i) => (
-                      <g key={label} transform={`translate(${i * 110}, 0)`}>
-                        <circle cx="6" cy="6" r="5" fill={color} />
-                        <text x="14" y="10" fill="#64748B" fontSize="9">{label}</text>
-                      </g>
-                    ))}
-                  </g>
-                </svg>
-
-                <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-                  <div className="bg-white rounded-lg border border-[#E2E8F0] p-3">
-                    <div className="text-xl font-bold text-[#EF4444]">8</div>
-                    <div className="text-xs text-[#64748B]">Critical Issues</div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-[#E2E8F0] p-3">
-                    <div className="text-xl font-bold text-[#F59E0B]">146</div>
-                    <div className="text-xs text-[#64748B]">Active Today</div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-[#E2E8F0] p-3">
-                    <div className="text-xl font-bold text-[#138808]">97%</div>
-                    <div className="text-xs text-[#64748B]">AI Accuracy</div>
-                  </div>
+        {/* Content Container */}
+        <div className="relative z-10 max-w-5xl w-full mx-auto text-center flex flex-col items-center">
+          {/* Swachh Bharat & Gandhi Spectacles Motif */}
+          <div className="mb-3 flex items-center justify-center gap-3">
+            {/* Gandhi Spectacles Vector Badge */}
+            <div className="bg-white/10 backdrop-blur-md border border-emerald-400/40 px-4 py-2 rounded-2xl flex items-center gap-3 shadow-lg hover:scale-105 transition-transform">
+              <svg viewBox="0 0 120 40" className="w-16 h-7 text-white fill-none stroke-current stroke-2">
+                {/* Left Spectacle */}
+                <circle cx="30" cy="20" r="14" stroke="#fff" strokeWidth="3" />
+                {/* Right Spectacle */}
+                <circle cx="90" cy="20" r="14" stroke="#fff" strokeWidth="3" />
+                {/* Bridge */}
+                <path d="M44 18 Q60 12 76 18" stroke="#fff" strokeWidth="3" />
+                {/* Left temple */}
+                <line x1="16" y1="18" x2="4" y2="10" stroke="#fff" strokeWidth="2.5" />
+                {/* Right temple */}
+                <line x1="104" y1="18" x2="116" y2="10" stroke="#fff" strokeWidth="2.5" />
+                {/* Text inside glasses */}
+                <text x="30" y="24" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="bold" fontFamily="sans-serif">स्वच्छ</text>
+                <text x="90" y="24" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="bold" fontFamily="sans-serif">भारत</text>
+              </svg>
+              <div className="text-left border-l border-white/20 pl-3">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-emerald-300">
+                  Swachh Bharat Abhiyan
+                </div>
+                <div className="text-xs font-semibold text-white/90">
+                  Clean India • Green India
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Stats */}
-      <section className="bg-[#1B3A6B] py-12">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-center text-white font-serif text-2xl font-bold mb-8 opacity-90">
-            Platform at a Glance
+            {/* Ashoka Emblem */}
+            <div className="hidden sm:block">
+              <Emblem className="w-12 h-14 text-white" />
+            </div>
+          </div>
+
+          {/* National Swachh Portal Title */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap mb-1">
+            <h1 className="text-4xl sm:text-6xl font-black tracking-tight font-sans text-white drop-shadow-lg">
+              india<span className="text-emerald-400">.gov.in</span>
+            </h1>
+            <span className="bg-emerald-500 text-slate-950 font-extrabold text-xs sm:text-sm px-2.5 py-1 rounded shadow uppercase tracking-wider">
+              SWACHH CIVIC
+            </span>
+          </div>
+
+          {/* Subtitle */}
+          <h2 className="text-xl sm:text-2xl font-bold tracking-normal text-emerald-100 font-sans mb-1 drop-shadow">
+            {isHi ? "स्वच्छ एवं पारदर्शी राष्ट्रीय नागरिक शिकायत पोर्टल" : "National Swachh Grievance & Civic Services Portal"}
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {stats.map(({ value, label, sublabel }) => (
-              <div key={label} className="text-center bg-white/10 rounded-lg p-4 border border-white/10">
-                <div className="text-3xl font-bold text-[#FF9933] font-serif mb-1">{value}</div>
-                <div className="text-sm font-semibold text-white mb-0.5">{label}</div>
-                <div className="text-xs text-white/60">{sublabel}</div>
-              </div>
+
+          {/* Tagline */}
+          <p className="text-base sm:text-lg font-serif italic text-emerald-200/90 max-w-2xl mb-8 drop-shadow">
+            {isHi
+              ? "गांधीजी का सपना — स्वच्छ, हरित और जवाबदेह भारत"
+              : "Mahatma Gandhi's Vision — Empowering Clean, Green & Accountable Communities"}
+          </p>
+
+          {/* Unified Search Bar Container */}
+          <form
+            onSubmit={handleSearch}
+            className="w-full max-w-4xl bg-white rounded-xl sm:rounded-2xl p-1.5 sm:p-2 hero-search-shadow flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 text-slate-800"
+          >
+            {/* Search Input */}
+            <div className="flex-1 flex items-center px-4 py-2 sm:py-3 gap-3">
+              <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={isHi ? "सर्च करें: समस्या दर्ज करें, शिकायत ट्रैक करें, वार्ड नक्शा, ई-प्रमाण पत्र..." : "Search in-app features: report grievance, track status, ward map, certificates..."}
+                className="w-full text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent"
+              />
+            </div>
+
+            {/* Category Dropdown Separator */}
+            <div className="border-t sm:border-t-0 sm:border-l border-emerald-100 px-3 py-1.5 sm:py-2 flex items-center">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full sm:w-auto bg-transparent text-xs sm:text-sm font-bold text-emerald-950 cursor-pointer focus:outline-none pr-6"
+                aria-label="Filter Civic Category"
+              >
+                {categoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="text-slate-900 bg-white">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Vibrant Green Search Button */}
+            <button
+              type="submit"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm sm:text-base px-8 py-3 rounded-lg sm:rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <span>{isHi ? "खोजें" : "Search"}</span>
+            </button>
+          </form>
+
+          {/* IN-APP ONLY FEATURE TAGS (NO AADHAAR / EXTERNAL) */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-white">
+            <span className="font-bold text-emerald-200 mr-1 flex items-center gap-1">
+              <span>App Features :</span>
+            </span>
+            {inAppFeatureTags.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={() => onNavigate(item.page)}
+                className="bg-white/15 hover:bg-emerald-600/80 backdrop-blur-md text-white border border-emerald-300/30 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all hover:scale-105 shadow-sm"
+              >
+                {item.label}
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="bg-white py-16">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold font-serif text-[#0F172A] mb-3">How CivicSetu Works</h2>
-            <p className="text-[#64748B] max-w-xl mx-auto">
-              A simple 4-step process from reporting to resolution — designed for every citizen.
+      {/* 2. SWACHH BHARAT LIVE BULLETIN MARQUEE */}
+      <section className="bg-emerald-950 border-y border-emerald-800/80 py-3 px-4 sm:px-8 text-white">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-3">
+          <div className="flex items-center gap-2 bg-emerald-600 text-white text-[11px] font-extrabold uppercase px-3 py-1 rounded-md tracking-wider flex-shrink-0 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+            <span>Swachh Bulletin</span>
+          </div>
+
+          <div className="flex-1 overflow-hidden text-xs text-emerald-100 flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-300 font-bold">🌱 Swachh Ward Ranking:</span>
+              <span>Ward 12 (Harmu) leads with 98.4% timely grievance resolution and zero open garbage points.</span>
+            </div>
+            <span className="text-emerald-700 hidden lg:inline">|</span>
+            <div className="hidden lg:flex items-center gap-2">
+              <span className="text-emerald-300 font-bold">📞 24x7 Helpline:</span>
+              <span>Call 1800-11-2026 for urgent waterlogging or open drain clearance.</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigate("community")}
+            className="text-xs font-bold text-emerald-300 hover:text-white underline underline-offset-4 flex-shrink-0"
+          >
+            View Ward Rankings →
+          </button>
+        </div>
+      </section>
+
+      {/* 3. FOUR FAST-TRACK IN-APP ACTION CARDS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 -mt-6 sm:-mt-8 relative z-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: File Grievance */}
+          <div
+            onClick={() => onNavigate("report")}
+            className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl border-t-4 border-emerald-600 cursor-pointer transition-all hover:-translate-y-1 group"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                📝
+              </span>
+              <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded uppercase">
+                AI Auto-Tag
+              </span>
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1 group-hover:text-emerald-700 transition-colors">
+              File a Civic Grievance
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed mb-3">
+              Report potholes, garbage, streetlights, or drainage with camera photo, GPS & audio notes.
+            </p>
+            <span className="text-xs font-bold text-emerald-700 flex items-center gap-1 group-hover:gap-2 transition-all">
+              File Report Now →
+            </span>
+          </div>
+
+          {/* Card 2: Track Grievance */}
+          <div
+            onClick={() => onNavigate("track")}
+            className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl border-t-4 border-teal-600 cursor-pointer transition-all hover:-translate-y-1 group"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                🔍
+              </span>
+              <span className="text-[10px] font-extrabold bg-teal-100 text-teal-900 px-2 py-0.5 rounded uppercase">
+                Live SLA Target
+              </span>
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1 group-hover:text-teal-700 transition-colors">
+              Track Complaint Status
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed mb-3">
+              Check assigned municipal officer, repair crew progress, and before/after verification.
+            </p>
+            <span className="text-xs font-bold text-teal-700 flex items-center gap-1 group-hover:gap-2 transition-all">
+              Track by Complaint ID →
+            </span>
+          </div>
+
+          {/* Card 3: Live Ward GIS Map */}
+          <div
+            onClick={() => onNavigate("map")}
+            className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl border-t-4 border-green-600 cursor-pointer transition-all hover:-translate-y-1 group"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="w-12 h-12 rounded-xl bg-green-50 text-green-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                🗺️
+              </span>
+              <span className="text-[10px] font-extrabold bg-green-100 text-green-900 px-2 py-0.5 rounded uppercase">
+                GIS Heatmap
+              </span>
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1 group-hover:text-green-700 transition-colors">
+              Interactive Ward Map
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed mb-3">
+              Explore city-wide resolution heatmaps, active maintenance zones, and ward statistics.
+            </p>
+            <span className="text-xs font-bold text-green-700 flex items-center gap-1 group-hover:gap-2 transition-all">
+              Open Live Map →
+            </span>
+          </div>
+
+          {/* Card 4: Swachh Rewards & Badges */}
+          <div
+            onClick={() => onNavigate("gamification")}
+            className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl border-t-4 border-amber-500 cursor-pointer transition-all hover:-translate-y-1 group"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                ⭐
+              </span>
+              <span className="text-[10px] font-extrabold bg-amber-100 text-amber-900 px-2 py-0.5 rounded uppercase">
+                Swachh Points
+              </span>
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-1 group-hover:text-amber-700 transition-colors">
+              Citizen Rewards & Badges
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed mb-3">
+              Earn civic credits for verified reports and climb the Swachhta Champion Leaderboard.
+            </p>
+            <span className="text-xs font-bold text-amber-700 flex items-center gap-1 group-hover:gap-2 transition-all">
+              View Leaderboard →
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. IDEAL TRANSFORMATION & RESOLUTION GALLERY (Before & After with Side Buttons) */}
+      <IdealGallery onNavigate={onNavigate} />
+
+      {/* 5. SWACHH SERVICES BY CATEGORY */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-emerald-200">
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-emerald-800 uppercase tracking-widest mb-1.5">
+              <span>🏛️ Swachh Municipal Services</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-emerald-950 font-sans">
+              Civic Grievance Categories & Services
+            </h2>
+            <p className="text-sm text-slate-600 mt-1">
+              File issues across dedicated municipal departments with AI automated department routing.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {howItWorks.map(({ step, title, desc, icon, color }, i) => (
-              <div key={step} className="relative">
-                {i < howItWorks.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-[#E2E8F0] z-0" style={{ width: "calc(100% - 2rem)", left: "calc(50% + 2rem)" }} />
-                )}
-                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-6 text-center relative z-10 hover:shadow-md transition-shadow">
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 shadow-sm"
-                    style={{ backgroundColor: color + "15", border: `2px solid ${color}40` }}
-                  >
-                    {icon}
-                  </div>
-                  <div className="text-xs font-mono font-bold mb-1" style={{ color }}>
-                    STEP {step}
-                  </div>
-                  <h3 className="text-lg font-bold text-[#0F172A] mb-2" style={{ color }}>
-                    {title}
-                  </h3>
-                  <p className="text-sm text-[#64748B] leading-relaxed">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <button
+            onClick={() => onNavigate("community")}
+            className="mt-4 md:mt-0 text-sm font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
+          >
+            <span>View All Topics</span>
+            <span>→</span>
+          </button>
         </div>
-      </section>
 
-      {/* Recent Issues */}
-      <section className="bg-[#F4F6FA] py-14">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold font-serif text-[#0F172A]">Trending Civic Issues</h2>
-              <p className="text-sm text-[#64748B] mt-1">Most reported issues across Jharkhand today</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {serviceCategories.map((cat) => (
+            <div
+              key={cat.id}
+              onClick={() => onNavigate(cat.action)}
+              className={`p-6 rounded-2xl bg-gradient-to-br ${cat.color} bg-white border shadow-sm hover:shadow-md transition-all cursor-pointer hover:-translate-y-1 group`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                  {cat.icon}
+                </span>
+                <span className="text-[11px] font-bold px-2.5 py-1 bg-white rounded-full text-emerald-900 shadow-sm border border-emerald-200">
+                  {cat.count}
+                </span>
+              </div>
+              <h3 className="font-bold text-slate-900 text-lg mb-1 group-hover:text-emerald-700 transition-colors">
+                {isHi ? cat.titleHi : cat.title}
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed mb-4">{cat.desc}</p>
+              <div className="flex items-center justify-between text-xs font-bold text-emerald-700 pt-3 border-t border-emerald-200/60">
+                <span>Access Service Portal</span>
+                <span>→</span>
+              </div>
             </div>
-            <button onClick={() => onNavigate("community")} className="text-sm text-[#1B3A6B] font-medium hover:underline hidden sm:block">
-              View All →
-            </button>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {recentIssues.map((issue) => (
-              <div key={issue.id} className="bg-white border border-[#E2E8F0] rounded-xl p-5 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div>
-                    <div className="text-xs font-mono text-[#94A3B8] mb-1">{issue.id}</div>
-                    <h3 className="font-semibold text-[#0F172A] text-sm leading-snug">{issue.title}</h3>
-                  </div>
-                  <span className={`flex-shrink-0 text-xs font-semibold px-2 py-1 rounded ${statusColors[issue.status] || "text-gray-600 bg-gray-50"}`}>
-                    {issue.status}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-[#64748B]">
-                  <span>📍 {issue.ward}</span>
-                  <span>👥 {issue.citizens} citizens</span>
-                  <span className="bg-[#F1F5F9] px-2 py-0.5 rounded">{issue.category}</span>
-                </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 6. SWACHH BHARAT DIGITAL SHOWCASE BANNER */}
+      <section className="bg-gradient-to-r from-emerald-950 via-[#063B2F] to-emerald-950 text-white py-14 px-4 sm:px-8 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
+          <div className="space-y-5">
+            <div className="inline-flex items-center gap-2 bg-emerald-800/60 text-emerald-300 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-500/30">
+              <span>🌱 Clean India • Digital Empowerment</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+              Swachh Bharat & Smart Municipal Transformation
+            </h2>
+            <p className="text-emerald-100 text-sm sm:text-base leading-relaxed">
+              Every civic complaint filed triggers an automated AI pipeline: duplicate detection, geo-tagging, priority escalation, and instant assignment to field engineers with strict time-bound SLAs.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2">
+              <div className="bg-white/10 border border-white/15 rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-amber-300 font-mono">98.4%</div>
+                <div className="text-[11px] text-emerald-100 mt-0.5">SLA Compliance</div>
               </div>
-            ))}
+              <div className="bg-white/10 border border-white/15 rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-emerald-300 font-mono">&lt; 3.8 d</div>
+                <div className="text-[11px] text-emerald-100 mt-0.5">Avg. Resolution</div>
+              </div>
+              <div className="bg-white/10 border border-white/15 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
+                <div className="text-2xl font-bold text-teal-300 font-mono">100%</div>
+                <div className="text-[11px] text-emerald-100 mt-0.5">Public Transparency</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/20">
+            <img
+              src="/images/digital_india_banner.jpg"
+              alt="Digital Swachh Governance"
+              className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500"
+            />
           </div>
         </div>
       </section>
 
-      {/* CTA Banner */}
-      <section className="bg-[#FF9933] py-12">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold font-serif text-white mb-3">
-            See a civic problem? Report it now.
-          </h2>
-          <p className="text-white/90 mb-6 text-lg">
-            Your report reaches the right government department within minutes.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      {/* 7. LIVE CIVIC RESOLUTION FEED */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 py-16">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest mb-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+              <span>Live Public Grievance Feed</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-sans">
+              Trending Ward Issues & Resolutions
+            </h2>
+          </div>
+          <button
+            onClick={() => onNavigate("community")}
+            className="text-xs sm:text-sm font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-100/70 hover:bg-emerald-200 border border-emerald-300 px-4 py-2 rounded-xl transition-colors"
+          >
+            Explore All 24,860+ Grievances →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {trendingIssues.map((issue) => (
+            <div
+              key={issue.id}
+              className="bg-white border border-emerald-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-start justify-between gap-3 mb-2.5">
+                <div>
+                  <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                    {issue.id}
+                  </span>
+                  <h4 className="font-bold text-slate-900 text-sm sm:text-base mt-1.5 leading-snug">
+                    {issue.title}
+                  </h4>
+                </div>
+                <span
+                  className={`flex-shrink-0 text-xs font-bold px-2.5 py-1 rounded-full border ${
+                    statusStyles[issue.status] || "bg-slate-100 text-slate-700 border-slate-300"
+                  }`}
+                >
+                  {issue.status}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-3 mt-3 border-t border-slate-100">
+                <span className="flex items-center gap-1 font-medium">
+                  <span>📍</span> {issue.ward}
+                </span>
+                <span className="flex items-center gap-1 font-medium">
+                  <span>👥</span> {issue.citizens} citizens endorsed
+                </span>
+                <span className="flex items-center gap-1 text-slate-500 ml-auto font-mono text-[11px]">
+                  <span>⏱️</span> {issue.sla}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 8. COMMUNITY CALL TO ACTION BANNER */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 pb-16">
+        <div className="bg-gradient-to-r from-emerald-800 to-green-900 rounded-3xl p-8 sm:p-12 text-white shadow-xl flex flex-col lg:flex-row items-center justify-between gap-8 border border-emerald-600">
+          <div className="max-w-xl space-y-3 text-center lg:text-left">
+            <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight">
+              Join the Swachh Bharat Mission in Your Ward
+            </h3>
+            <p className="text-emerald-100 text-sm sm:text-base leading-relaxed">
+              Take a photo of any road damage, garbage pile, or water leakage. Together, we can make every neighborhood clean, safe, and beautiful.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3.5 w-full lg:w-auto">
             <button
               onClick={() => onNavigate("report")}
-              className="bg-white text-[#FF9933] font-bold px-8 py-3 rounded hover:bg-gray-50 transition-colors text-base"
+              className="bg-white text-emerald-900 hover:bg-emerald-50 font-extrabold text-sm sm:text-base px-8 py-3.5 rounded-xl shadow-lg transition-transform hover:scale-105 text-center"
             >
               Report a Civic Issue
             </button>
             <button
               onClick={() => onNavigate("login")}
-              className="bg-transparent border-2 border-white text-white font-bold px-8 py-3 rounded hover:bg-white/10 transition-colors text-base"
+              className="border-2 border-white text-white hover:bg-white/15 font-bold text-sm sm:text-base px-8 py-3.5 rounded-xl transition-all text-center"
             >
-              Create Citizen Account
+              Citizen Login / Register
             </button>
           </div>
         </div>
